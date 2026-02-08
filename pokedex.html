@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Perfect Pokédex - All 1,025 Pokémon 🔥</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0; padding: 20px; color: #333;
+        }
+        h1 { text-align: center; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-bottom: 20px; }
+        .controls {
+            display: flex; flex-wrap: wrap; gap: 10px;
+            justify-content: center; align-items: center; margin-bottom: 20px;
+        }
+        #search { 
+            padding: 12px 20px; border: none; border-radius: 25px; font-size: 1.1em; 
+            text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
+            flex: 1; min-width: 250px; max-width: 400px; 
+        }
+        #regionFilter { 
+            padding: 12px 15px; border: 2px solid #ffcb05; border-radius: 25px; 
+            font-size: 1em; font-weight: bold; background: white; cursor: pointer; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); min-width: 150px; 
+        }
+        button { 
+            background: #ffcb05; color: #333; border: none; padding: 12px 20px; 
+            border-radius: 25px; cursor: pointer; font-size: 1em; font-weight: bold; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: all 0.2s; 
+        }
+        button:hover { background: #ffd500; transform: translateY(-2px); }
+        button.active { background: #ff6b6b; color: white; }
+        #pokedex { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            gap: 15px; max-width: 1400px; margin: 0 auto; 
+        }
+        .pokemon {
+            background: white; border-radius: 15px; padding: 15px; text-align: center;
+            cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.2); transition: all 0.2s;
+            opacity: 0; animation: fadeIn 0.5s forwards;
+        }
+        .pokemon:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        @keyframes fadeIn { to { opacity: 1; } }
+        .pokemon img { 
+            width: 110px; height: 110px; border-radius: 50%; border: 3px solid #ffcb05; 
+            margin-bottom: 10px; background: #f0f0f0; 
+        }
+        .pokemon h3 { margin: 10px 0 5px; color: #333; font-size: 1.1em; }
+        .pokemon .id { font-size: 0.9em; color: #666; font-weight: bold; }
+        .region-tag { font-size: 0.8em; color: #666; margin-top: 5px; font-weight: bold; }
+        #pokemon-detail {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto;
+            background: white; border-radius: 20px; padding: 30px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6); z-index: 1000; display: none;
+        }
+        .close-btn { 
+            background: #ff6b6b; color: white; border: none; padding: 12px 25px; 
+            border-radius: 25px; cursor: pointer; font-size: 1.1em; 
+            margin: 0 auto 20px; display: block; 
+        }
+        .close-btn:hover { background: #ff5252; }
+        .copyright { text-align: center; color: rgba(255,255,255,0.8); margin-top: 40px; font-size: 0.9em; }
+        @media (max-width: 768px) { 
+            .controls { flex-direction: column; align-items: center; } 
+            #pokedex { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } 
+            #pokemon-detail { width: 95%; padding: 20px; } 
+        }
+    </style>
+</head>
+<body>
+    <h1>🔥 Perfect Pokédex - All 1,025 Pokémon 🔥</h1>
+    
+    <div class="controls">
+        <input type="text" id="search" placeholder="🔍 Search Pikachu, Terapagos, Roaring Moon...">
+        <select id="regionFilter">
+            <option value="pokedex">📋 Pokédex Order</option>
+            <option value="kanto">🌴 Kanto (1-151)</option>
+            <option value="johto">🍃 Johto (152-251)</option>
+            <option value="hoenn">🔥 Hoenn (252-386)</option>
+            <option value="sinnoh">❄️ Sinnoh (387-493)</option>
+            <option value="unova">⚡ Unova (494-649)</option>
+            <option value="kalos">🌺 Kalos (650-721)</option>
+            <option value="alola">🏝️ Alola (722-809)</option>
+            <option value="galar">🗡️ Galar (810-905)</option>
+            <option value="paldea">🟣 Paldea (906-1025)</option>
+        </select>
+        <button onclick="sortName('asc')" id="sortA">📊 A → Z</button>
+        <button onclick="sortName('desc')" id="sortZ">📊 Z → A</button>
+    </div>
+    
+    <div id="pokedex">
+        <div class="loading">Loading Perfect Pokédex...</div>
+    </div>
+    
+    <div id="pokemon-detail">
+        <button class="close-btn" onclick="closeDetail()">❌ Close</button>
+        <div id="detail-content"></div>
+    </div>
+
+    <div class="copyright">© Aizen.sama</div>
+
+    <script>
+        const pokedex = document.getElementById('pokedex');
+        const searchInput = document.getElementById('search');
+        const regionFilter = document.getElementById('regionFilter');
+        const detail = document.getElementById('pokemon-detail');
+        const detailContent = document.getElementById('detail-content');
+        let allPokemon = [];
+        let pokemonCards = [];
+
+        const regionRanges = {
+            kanto: [1,151], johto: [152,251], hoenn: [252,386],
+            sinnoh: [387,493], unova: [494,649], kalos: [650,721],
+            alola: [722,809], galar: [810,905], paldea: [906,1025]
+        };
+
+        // Pokémon flavor text descriptions
+        const flavorTexts = {
+            1: "Bulbasaur, the Seed Pokémon. A strange seed was planted on its back at birth. The plant sprouts and grows with this Pokémon.",
+            4: "Charmander, the Lizard Pokémon. The flame that burns at the tip of its tail is an indication of its emotions.",
+            7: "Squirtle, the Tiny Turtle Pokémon. Its tail has oil on it that makes it able to swim fast.",
+            25: "Pikachu, the Mouse Pokémon. It stores electricity in the electric sacs on its cheeks.",
+            133: "Eevee, the Evolution Pokémon. Its genetic code is irregular allowing it to mutate and evolve in many different ways.",
+            151: "Mew, a New Species Pokémon said to possess the genetic composition of all Pokémon.",
+            1009: "Terapagos, the Shell Pokémon. It possesses the Terastal phenomenon, making it the center of the Paldea region."
+        };
+
+        async function getAllPokemon() {
+            pokedex.innerHTML = '<div class="loading">Loading 1,025 Pokémon...</div>';
+            for (let i = 1; i <= 1025; i++) {
+                try {
+                    const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${i}`);
+                    const pokemonData = await response.json();
+                    
+                    // Get species data for flavor text
+                    const speciesResponse = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${i}`);
+                    const speciesData = await speciesResponse.json();
+                    
+                    // Get English flavor text (first available)
+                    let description = "A mysterious Pokémon.";
+                    if (speciesData.flavor_text_entries && speciesData.flavor_text_entries.length > 0) {
+                        for (let entry of speciesData.flavor_text_entries) {
+                            if (entry.language.name === 'en') {
+                                description = entry.flavor_text.replace(/\n/g, ' ').replace(/\f/g, ' ').trim();
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Override with custom descriptions for key Pokémon
+                    if (flavorTexts[i]) {
+                        description = flavorTexts[i];
+                    }
+                    
+                    allPokemon.push({...pokemonData, description});
+                    
+                    const div = document.createElement('div');
+                    div.className = 'pokemon';
+                    div.dataset.name = pokemonData.name;
+                    div.dataset.id = i;
+                    div.dataset.region = getRegionName(i);
+                    div.dataset.description = description.toLowerCase();
+                    div.onclick = () => showDetail({...pokemonData, description}, i);
+                    div.innerHTML = `
+                        <img src="${pokemonData.sprites.front_default || 'https://via.placeholder.com/110/ffcb05/333?text=#' + i}" alt="${pokemonData.name}">
+                        <div class="id">#${i.toString().padStart(4, '0')}</div>
+                        <h3>${pokemonData.name.toUpperCase()}</h3>
+                        <div class="region-tag">${getRegionName(i)}</div>
+                    `;
+                    pokedex.appendChild(div);
+                    pokemonCards.push(div);
+                    
+                    if (i % 100 === 0) pokedex.querySelector('.loading').textContent = `Loaded ${i}/1025 Pokémon...`;
+                } catch (error) { 
+                    console.log(`Failed #${i}`); 
+                }
+            }
+            pokedex.querySelector('.loading')?.remove();
+        }
+
+        function getRegionName(id) {
+            for (let [region, range] of Object.entries(regionRanges)) {
+                if (id >= range[0] && id <= range[1]) return region.charAt(0).toUpperCase() + region.slice(1);
+            }
+            return 'Unknown';
+        }
+
+        function filterByRegion() {
+            const selectedRegion = regionFilter.value;
+            pokemonCards.forEach(card => {
+                if (selectedRegion === 'pokedex') card.style.display = 'block';
+                else card.style.display = (selectedRegion === card.dataset.region.toLowerCase()) ? 'block' : 'none';
+            });
+        }
+
+        function sortName(direction) {
+            document.querySelectorAll('#sortA, #sortZ').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            pokemonCards.sort((a, b) => direction === 'asc' ? 
+                a.dataset.name.localeCompare(b.dataset.name) : b.dataset.name.localeCompare(a.dataset.name));
+            pokemonCards.forEach(card => pokedex.appendChild(card));
+        }
+
+        function showDetail(pokemon, id) {
+            detail.style.display = 'block';
+            const typesHtml = pokemon.types.map(t => 
+                `<span style="background:#${getTypeColor(t.type.name)};padding:8px 12px;margin:3px;border-radius:15px;color:white;font-weight:bold;">${t.type.name}</span>`
+            ).join('');
+            
+            detailContent.innerHTML = `
+                <img src="${pokemon.sprites.front_default || 'https://via.placeholder.com/160/ffcb05/333?text=#' + pokemon.id}" alt="${pokemon.name}" style="width:160px;height:160px;border-radius:20%;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+                    <h2>#${pokemon.id.toString().padStart(4, '0')} ${pokemon.name.toUpperCase()}</h2>
+                </div>
+                <div style="background:linear-gradient(135deg,#f8f9fa,#e9ecef);padding:20px;border-radius:15px;margin:20px 0;border-left:5px solid #ffcb05;font-style:italic;line-height:1.5;">
+                    ${pokemon.description}
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:20px 0;">
+                    <p style="background:#f8f9fa;padding:12px;border-radius:10px;"><strong>Weight</strong><br>${(pokemon.weight/10).toFixed(1)} kg</p>
+                    <p style="background:#f8f9fa;padding:12px;border-radius:10px;"><strong>Height</strong><br>${(pokemon.height/10).toFixed(1)} m</p>
+                </div>
+                <p style="text-align:center;margin:15px 0;"><strong>Types:</strong> ${typesHtml}</p>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;">
+                    ${pokemon.stats.map(stat => `<p style="background:#e3f2fd;padding:12px;border-radius:8px;margin:0;font-weight:bold;border-left:4px solid #2196f3;">${stat.stat.name.toUpperCase()}: <span style="color:#2196f3;">${stat.base_stat}</span></p>`).join('')}
+                </div>
+            `;
+        }
+
+        function getTypeColor(type) {
+            const colors = {
+                normal:'A8A878', fire:'F08030', water:'6890F0', grass:'78C850',
+                electric:'F8D030', ice:'98D8D8', fighting:'C03028', poison:'A040A0',
+                ground:'E0C068', flying:'A890F0', psychic:'F85888', bug:'A8B820',
+                rock:'B8A038', ghost:'705898', dragon:'7038F8', dark:'708848',
+                steel:'B8B8D0', fairy:'EE99AC'
+            };
+            return colors[type] || 'A0A0A0';
+        }
+
+        function closeDetail() { detail.style.display = 'none'; }
+
+        regionFilter.addEventListener('change', filterByRegion);
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            pokemonCards.forEach(card => {
+                card.style.display = (card.dataset.name.includes(term) || 
+                    card.dataset.id.includes(term) || 
+                    card.dataset.description.includes(term)) ? 'block' : 'none';
+            });
+        });
+
+        getAllPokemon();
+    </script>
+</body>
+</html>
